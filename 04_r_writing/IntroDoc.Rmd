@@ -1,0 +1,28 @@
+---
+title: "Intro_Doc"
+author: "Christian Hosam"
+date: "2023-03-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##First part of the New Maternal Health Doc
+
+##Import Packages
+```{r}
+library(devtools)
+library(tidyverse)
+library(usethis)
+library(rticles)
+```
+
+##Import Datasets
+
+##EDA
+
+##Is US Healthcare Expenditure Uniquely Decomposed?
+
+Let's try again
