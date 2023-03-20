@@ -1,0 +1,30 @@
+---
+title: "Configuring a Crisis: Black Maternal Health and Bureaucratic Dispossession"
+author: "Christian Hosam"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document:
+    number_sections: true
+
+abstract: |
+  Maternal mortality in the United States is often configured as a crisis given the disproportionate number of maternal deaths in comparison to other advanced industrial countries. Much of the recent research and advocacy on combatting these disparities have focused on moving from individual frameworks of blame to centering stories of either provider-level implicit bias and/or racism as well as social determinants of health. One avenue that has been relatively unexplored is the structure of the American healthcare system, particularly the uniquely high proportion of healthcare functionality that is devolved to states and localities. Here, I look at the three counties within the state of Maryland with the highest concentration of Black residents to show how the types of health-care initiatives located at the county level focus on nudging birthing people into better outcomes in spite of medical and sociological literature showing that these interventions are misapplied.
+bibliography: "https://api.citedrive.com/bib/02db2133-c341-42d0-8077-98b8e30b6c5d/references.bib?x=eyJpZCI6ICIwMmRiMjEzMy1jMzQxLTQyZDAtODA3Ny05OGI4ZTMwYjZjNWQiLCAidXNlciI6ICIzMTQ2IiwgInNpZ25hdHVyZSI6ICJjMjhkZmYzMjkzODM5YzNkYzJlZjc4YjE0ZGU4ZTMwYzYyNzEzNWY5NmQ4ZDUzNjNlMGZiZmIxZDQ0M2ZmMmFmIn0=/bibliography.bib"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Package Import, include=FALSE}
+library(devtools)
+library(tidyverse)
+library(usethis)
+library(rticles)
+library(bookdown)
+library(kableExtra)
+library(ggthemes)
+```
+
+# Introduction
+
+Recent articles on the state of maternal health are rightfully brimming with distress about the harrowing rates of maternal mortality and morbidity in the United States.
