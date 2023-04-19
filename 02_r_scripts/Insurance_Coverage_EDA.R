@@ -5,6 +5,8 @@ library(devtools)
 library(readxl)
 library(readr)
 library(kableExtra)
+devtools::install_github("DanChaltiel/crosstable", build_vignettes=TRUE)
+library(crosstable)
 if (!require(remotes)) install.packages("remotes")
 remotes::install_github("ipums/ipumsr/ipumsexamples")
 remotes::install_github(
@@ -57,10 +59,36 @@ BWSubset3 <- BWsubset %>%
 
 #Create Frequency Table of Health Insurance Coverage by Type 
 table1 <- BWSubset3 %>%
-  across(select(HCOVANY:HINSIHS), count = freq())
-  
+  select(HCOVANY, HINSCAID, HINSPUR)
+table1
 
+#Create Table of Black Woman's Insurance Coverage by Type 
+table2 <- crosstable(BWSubset3, c(HCOVANY:HINSIHS), showNA="ifany", 
+           percent_digits=0, percent_pattern="{n} ({p_row})") %>% 
+  as_flextable(keep_id=TRUE)
 
-table2 <- table1 %>%
-  summarise(freq = n())
+table2
 
+table3 <- crosstable(BWSubset3, c(HCOVANY), by=c(HCOVPRIV, HCOVPUB), showNA = "ifany",
+                     percent_digits = 0, percent_pattern = "{n} ({p_row})") %>%
+  as_flextable(keep_id=TRUE)
+table3
+
+table4 <- crosstable(BWSubset3, c(HCOVPRIV, HCOVPUB), by=c(HCOVANY), showNA = "ifany",
+                     percent_digits = 0, percent_pattern = "{n} ({p_row})") %>%
+  as_flextable(keep_id=TRUE)
+table4
+
+#Line Graph of Black Women's Insurance Coverage (2017-2021)
+graph_subset <- BWSubset3 %>%
+  filter(HCOVANY == "2") %>%
+  mutate(freq = length(HCOVANY))
+linegraph1 <- graph_subset %>%
+  ggplot(aes(x = MULTYEAR, y = freq)) +
+  geom_line()
+linegraph1
+hist1
+bargraph1 <- BWSubset3 %>%
+  ggplot(aes(x = MULTYEAR, y = HCOVANY)) + 
+  geom_bar()
+bargraph1
