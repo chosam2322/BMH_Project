@@ -1,0 +1,35 @@
+---
+title: "Dem_Info_Datasets"
+author: "Christian Hosam"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r package imports, echo=FALSE}
+install.packages("tidycensus")
+remotes::install_github("kuriwaki/ccesMRPprep")
+library(tidycensus)
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(ccesMRPprep)
+#Set Census API Key
+census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE)
+```
+
+```{r Census API Call}
+#Creating Reference Table to Look Up ACS Variable Code Names (Using Shiro Kuriwaki CCES Package)
+acs_reference <- acscodes_df
+view(acs_reference)
+
+#Using Native Version of Look Up Codes from TidyCensus 
+var21 <- load_variables(2021, "acs1", cache = TRUE)
+view(var21)
+
+
+```
