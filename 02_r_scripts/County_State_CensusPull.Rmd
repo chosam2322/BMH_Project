@@ -13,16 +13,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r package imports, echo=FALSE}
 install.packages("tidycensus")
 remotes::install_github("kuriwaki/ccesMRPprep")
+install.packages("censusapi")
 library(tidycensus)
 library(tidyverse)
 library(readxl)
 library(janitor)
 library(ccesMRPprep)
+library(censusapi)
 #Set Census API Key
 census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE)
 ```
 
-```{r Census API Call}
+```{r Census API Call Look-Up, include=TRUE}
 #Creating Reference Table to Look Up ACS Variable Code Names (Using Shiro Kuriwaki CCES Package)
 acs_reference <- acscodes_df
 view(acs_reference)
@@ -31,5 +33,65 @@ view(acs_reference)
 var21 <- load_variables(2021, "acs1", cache = TRUE)
 view(var21)
 
+```
+
+```{r Initial State-Level Call, include=TRUE}
+my_variables <- c( educatt = "B15003_001",
+                   health_coverage = "B27011_001",
+                   pct_blk = "B02001_003",
+                   pub_assist = "B19058_002",
+                   hh_type = "B11001A_006",
+                   unemp = "B23025_005",
+                   povrate = "B17001A_002",
+                   medinchh = "B19013A_001",
+                   giniineq = "B19083_001")
+
+
+state_demographics <- get_acs(geography = "state",
+                            year = 2021, 
+                            survey = "acs5",
+                            variables = my_variables,
+                            output = "wide")
+view(state_demographics)
+
+#Write a CSV File
+#write_csv(state_demographics, "state_demographics.csv")
+```
+
+```{r Initial County-Level Call, include=TRUE}
+county_demographics <- get_acs(geography = "county",
+                               year = 2021,
+                               survey = "acs5",
+                               variables = my_variables,
+                               output = "wide")
+view(county_demographics)
+write_csv(county_demographics, "county_demographics.csv")
+```
+
+
+```{r Cut County-Level Call to Size, include=TRUE}
+#First, I'll separate out the county names from the state names
+county_demographics <- separate(
+  county_demographics,
+  NAME,
+  into = c("county", "state"),
+  sep = ", "
+)
+
+#Now I'll write a function to cut down the county dataset to only three counties per state with the counties that have the highest percentage of Black people 
+
+get_three_highest <- function(x) 
+  {
+  sorted_x <- sort(x, decreasing = TRUE)
+  return(sorted_x[1:3])
+}
+
+cleaned_counties <- county_demographics %>%
+  group_by(state) %>%
+  filter(pct_blkE == get_three_highest(pct_blkE))
+
 
 ```
+
+
+
