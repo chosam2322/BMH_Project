@@ -21,7 +21,7 @@ library(janitor)
 library(ccesMRPprep)
 library(censusapi)
 #Set Census API Key
-census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE, overwrite=TRUE)
+census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE)
 ```
 
 ```{r Census API Call Look-Up, include=TRUE}
@@ -55,7 +55,7 @@ state_demographics <- get_acs(geography = "state",
 view(state_demographics)
 
 #Write a CSV File
-write_csv(state_demographics, "state_demographics.csv")
+#write_csv(state_demographics, "state_demographics.csv")
 ```
 
 ```{r Initial County-Level Call, include=TRUE}
@@ -70,7 +70,28 @@ write_csv(county_demographics, "county_demographics.csv")
 
 
 ```{r Cut County-Level Call to Size, include=TRUE}
+#First, I'll separate out the county names from the state names
+county_demographics <- separate(
+  county_demographics,
+  NAME,
+  into = c("county", "state"),
+  sep = ", "
+)
+
 #Now I'll write a function to cut down the county dataset to only three counties per state with the counties that have the highest percentage of Black people 
+
+get_three_highest <- function(x) 
+  {
+  sorted_x <- sort(x, decreasing = TRUE)
+  return(sorted_x[1:3])
+}
+
+cleaned_counties <- county_demographics %>%
+  group_by(state) %>%
+  filter(pct_blkE == get_three_highest(pct_blkE))
 
 
 ```
+
+
+
