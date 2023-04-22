@@ -11,17 +11,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r package imports, echo=FALSE}
-install.packages("tidycensus")
-remotes::install_github("kuriwaki/ccesMRPprep")
-install.packages("censusapi")
+#install.packages("tidycensus")
+#remotes::install_github("kuriwaki/ccesMRPprep")
+#install.packages("censusapi")
 library(tidycensus)
 library(tidyverse)
 library(readxl)
+library(haven)
 library(janitor)
 library(ccesMRPprep)
 library(censusapi)
 #Set Census API Key
-census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE)
+#census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE)
 ```
 
 ```{r Census API Call Look-Up, include=TRUE}
@@ -38,7 +39,7 @@ view(var21)
 ```{r Initial State-Level Call, include=TRUE}
 my_variables <- c( educatt = "B15003_001",
                    health_coverage = "B27011_001",
-                   pct_blk = "B02001_003",
+                   blk_pop = "B02001_003",
                    pub_assist = "B19058_002",
                    hh_type = "B11001A_006",
                    unemp = "B23025_005",
@@ -51,21 +52,33 @@ state_demographics <- get_acs(geography = "state",
                             year = 2021, 
                             survey = "acs5",
                             variables = my_variables,
+                            summary_var = "B02001_001",
                             output = "wide")
+
+state_demographics <- state_demographics %>%
+  rename("total_pop" = "summary_est")
 view(state_demographics)
 
 #Write a CSV File
-#write_csv(state_demographics, "state_demographics.csv")
+write_csv(state_demographics, "state_demographics.csv")
 ```
 
 ```{r Initial County-Level Call, include=TRUE}
+#Include Summary Var to have 
 county_demographics <- get_acs(geography = "county",
                                year = 2021,
                                survey = "acs5",
                                variables = my_variables,
+                               summary_var = "B02001_001",
                                output = "wide")
+
+county_demographics <- county_demographics %>%
+  rename("total_pop" = "summary_est")
+
+
 view(county_demographics)
-write_csv(county_demographics, "county_demographics.csv")
+
+#write_csv(county_demographics, "county_demographics.csv")
 ```
 
 
@@ -78,20 +91,30 @@ county_demographics <- separate(
   sep = ", "
 )
 
-#Now I'll write a function to cut down the county dataset to only three counties per state with the counties that have the highest percentage of Black people 
+#Now, I'll create a column that calculates Black population percentage rather than simple population number
+county_demographics <- county_demographics %>%
+  mutate(pct_blk = 100 * ( blk_popE / total_pop))
 
-get_three_highest <- function(x) 
-  {
-  sorted_x <- sort(x, decreasing = TRUE)
-  return(sorted_x[1:3])
-}
+#Next, I'll write a function to cut down the county dataset to only three counties per state with the counties that have the highest percentage of Black people 
 
-cleaned_counties <- county_demographics %>%
-  group_by(state) %>%
-  filter(pct_blkE == get_three_highest(pct_blkE))
+cleaned_counties <- county_demographics %>% 
+  # Group by state
+  group_by(state) %>% 
+  # Sort by pct_blk_e in descending order
+  arrange(desc(pct_blk)) %>% 
+  # Select the top 3 rows for each state
+  slice(1:3)
 
-
+view(cleaned_counties)
+write_csv(cleaned_counties, "Counties_Demo.csv")
 ```
 
+```{r Import Health Resources Data, include=TRUE}
+ahrf2022 <- read_sas("00_raw_data/ahrf2022.sas7bdat", 
+    NULL)
 
+health_resource_data <- ahrf2022
+View(health_resource_data)
+
+```
 
