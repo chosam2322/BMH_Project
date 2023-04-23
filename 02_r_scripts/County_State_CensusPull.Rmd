@@ -37,20 +37,28 @@ view(var21)
 ```
 
 ```{r Initial State-Level Call, include=TRUE}
-my_variables <- c( educatt = "B15003_001",
-                   health_coverage = "B27011_001",
+#Create variable list of co-variates located in Census files for both states and counties
+my_variables <- c(educ_att_hs = "B15003_017",
+                   educ_att_ba = "B15003_022",
+                   priv_health_coverage = "B27011_001",
+                   pub_health_coverage = "B27003_001",
+                   mcaid_health_coverage = "	B27007_001",
+                   mcare_healh_coverage = "B27006_001",
+                   directp_health_coverage = "B27005_001",
+                   employer_health_coverage = "B27004_001",
+                   no_health_insurance = "B992701_003",
                    blk_pop = "B02001_003",
                    pub_assist = "B19058_002",
-                   hh_type = "B11001A_006",
+                   female_hh = "B11001_006",
                    unemp = "B23025_005",
-                   povrate = "B17001A_002",
-                   medinchh = "B19013A_001",
+                   povrate = "B07012_002",
+                   medinchh = "B19013_001",
                    giniineq = "B19083_001")
 
 
 state_demographics <- get_acs(geography = "state",
                             year = 2021, 
-                            survey = "acs5",
+                            survey = "acs1",
                             variables = my_variables,
                             summary_var = "B02001_001",
                             output = "wide")
@@ -60,14 +68,14 @@ state_demographics <- state_demographics %>%
 view(state_demographics)
 
 #Write a CSV File
-write_csv(state_demographics, "state_demographics.csv")
+#write_csv(state_demographics, "state_demographics.csv")
 ```
 
 ```{r Initial County-Level Call, include=TRUE}
 #Include Summary Var to have 
 county_demographics <- get_acs(geography = "county",
                                year = 2021,
-                               survey = "acs5",
+                               survey = "acs1",
                                variables = my_variables,
                                summary_var = "B02001_001",
                                output = "wide")
