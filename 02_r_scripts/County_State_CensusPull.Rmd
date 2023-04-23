@@ -106,15 +106,10 @@ cleaned_counties <- county_demographics %>%
   slice(1:3)
 
 view(cleaned_counties)
-write_csv(cleaned_counties, "Counties_Demo.csv")
+#write_csv(cleaned_counties, "Counties_Demo.csv")
 ```
 
 ```{r Import Health Resources Data, include=TRUE}
-ahrf2022 <- read_sas("00_raw_data/ahrf2022.sas7bdat", 
-    NULL)
-
-health_resource_data <- ahrf2022
-View(health_resource_data)
 
 ```
 
