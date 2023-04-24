@@ -31,7 +31,7 @@ acs_reference <- acscodes_df
 view(acs_reference)
 
 #Using Native Version of Look Up Codes from TidyCensus 
-var21 <- load_variables(2021, "acs1", cache = TRUE)
+var21 <- load_variables(2021, "acs5", cache = TRUE)
 view(var21)
 
 ```
