@@ -31,7 +31,7 @@ acs_reference <- acscodes_df
 view(acs_reference)
 
 #Using Native Version of Look Up Codes from TidyCensus 
-var21 <- load_variables(2021, "acs5", cache = TRUE)
+var21 <- load_variables(2021, "acs1", cache = TRUE)
 view(var21)
 
 ```
@@ -42,7 +42,7 @@ my_variables <- c(educ_att_hs = "B15003_017",
                    educ_att_ba = "B15003_022",
                    priv_health_coverage = "B27011_001",
                    pub_health_coverage = "B27003_001",
-                   mcaid_health_coverage = "	B27007_001",
+                   mcaid_health_coverage = "B27007_001",
                    mcare_healh_coverage = "B27006_001",
                    directp_health_coverage = "B27005_001",
                    employer_health_coverage = "B27004_001",
