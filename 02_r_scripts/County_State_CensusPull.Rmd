@@ -22,17 +22,24 @@ library(janitor)
 library(ccesMRPprep)
 library(censusapi)
 #Set Census API Key
-#census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE)
+ch_census_my_key <- census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE, overwrite = TRUE)
 ```
 
-```{r Census API Call Look-Up, include=TRUE}
+```{r Census API Call Reference Look-Up, include=TRUE}
 #Creating Reference Table to Look Up ACS Variable Code Names (Using Shiro Kuriwaki CCES Package)
 acs_reference <- acscodes_df
 view(acs_reference)
 
 #Using Native Version of Look Up Codes from TidyCensus 
-var21 <- load_variables(2021, "acs1", cache = TRUE)
+var21 <- load_variables(2021, "acs5", cache = TRUE)
 view(var21)
+
+#Use SAHIE API for county-level health insurance variables
+sahie_vars <- listCensusMetadata(
+    name = "timeseries/healthins/sahie", 
+    type = "variables")
+view(sahie_vars)
+
 
 ```
 
@@ -40,42 +47,52 @@ view(var21)
 #Create variable list of co-variates located in Census files for both states and counties
 my_variables <- c(educ_att_hs = "B15003_017",
                    educ_att_ba = "B15003_022",
-                   priv_health_coverage = "B27011_001",
-                   pub_health_coverage = "B27003_001",
-                   mcaid_health_coverage = "B27007_001",
-                   mcare_healh_coverage = "B27006_001",
-                   directp_health_coverage = "B27005_001",
-                   employer_health_coverage = "B27004_001",
-                   no_health_insurance = "B992701_003",
                    blk_pop = "B02001_003",
                    pub_assist = "B19058_002",
                    female_hh = "B11001_006",
                    unemp = "B23025_005",
-                   povrate = "B07012_002",
+                   pop_in_pov = "B07012_002",
                    medinchh = "B19013_001",
                    giniineq = "B19083_001")
 
+hins_variables <- getCensus(
+    key = ch_census_my_key,
+    name = "timeseries/healthins/sahie",
+    vars = c("NAME", "GEOID", "PCTUI_PT", "NUI_PT"), 
+    region = "county:*", 
+    time = 2020)
+
+st_hinsvariables <- getCensus(
+    key = ch_census_my_key,
+    name = "timeseries/healthins/sahie",
+    vars = c("NAME", "GEOID", "PCTUI_PT", "NUI_PT"), 
+    region = "state:*", 
+    time = 2020)
+
+view(hins_variables)
+view(st_hinsvariables)
 
 state_demographics <- get_acs(geography = "state",
                             year = 2021, 
-                            survey = "acs1",
+                            survey = "acs5",
                             variables = my_variables,
                             summary_var = "B02001_001",
                             output = "wide")
 
 state_demographics <- state_demographics %>%
   rename("total_pop" = "summary_est")
+
 view(state_demographics)
 
 #Write a CSV File
-#write_csv(state_demographics, "state_demographics.csv")
+write_csv(state_demographics, "state_demographics.csv")
 ```
 
 ```{r Initial County-Level Call, include=TRUE}
 #Include Summary Var to have 
 county_demographics <- get_acs(geography = "county",
                                year = 2021,
-                               survey = "acs1",
+                               survey = "acs5",
                                variables = my_variables,
                                summary_var = "B02001_001",
                                output = "wide")
@@ -86,7 +103,6 @@ county_demographics <- county_demographics %>%
 
 view(county_demographics)
 
-#write_csv(county_demographics, "county_demographics.csv")
 ```
 
 
@@ -101,10 +117,29 @@ county_demographics <- separate(
 
 #Now, I'll create a column that calculates Black population percentage rather than simple population number
 county_demographics <- county_demographics %>%
-  mutate(pct_blk = 100 * ( blk_popE / total_pop))
+  mutate(pct_blk = 100 * ( blk_popE / total_pop)) %>%
+  mutate(pct_pov = 100 * (pop_in_povE / total_pop)) %>%
+  mutate(pct_hsgrad = 100 * (educ_att_hsE / total_pop)) %>%
+  mutate(pct_collgrad = 100 * (educ_att_baE /total_pop)) %>%
+  mutate(pct_unemp = 100 * (unempE / total_pop)) %>%
+  mutate(pct_fem_hh = 100 * (female_hhE / total_pop)) %>%
+  mutate(pct_pub_assist = 100 *(pub_assistE / total_pop)) 
+  
+  
+view(county_demographics)
 
+#Do the same for the states 
+state_demographics <- state_demographics %>%
+  mutate(pct_blk = 100 * ( blk_popE / total_pop)) %>%
+  mutate(pct_pov = 100 * (pop_in_povE / total_pop)) %>%
+  mutate(pct_hsgrad = 100 * (educ_att_hsE / total_pop)) %>%
+  mutate(pct_collgrad = 100 * (educ_att_baE /total_pop)) %>%
+  mutate(pct_unemp = 100 * (unempE / total_pop)) %>%
+  mutate(pct_fem_hh = 100 * (female_hhE / total_pop)) %>%
+  mutate(pct_pub_assist = 100 *(pub_assistE / total_pop))
+
+view(state_demographics)
 #Next, I'll write a function to cut down the county dataset to only three counties per state with the counties that have the highest percentage of Black people 
-
 cleaned_counties <- county_demographics %>% 
   # Group by state
   group_by(state) %>% 
@@ -114,10 +149,55 @@ cleaned_counties <- county_demographics %>%
   slice(1:3)
 
 view(cleaned_counties)
-#write_csv(cleaned_counties, "Counties_Demo.csv")
+write_csv(cleaned_counties, "county_demographic_info.csv")
 ```
 
 ```{r Import Health Resources Data, include=TRUE}
+#Import State and County Level Data from Area Health Resources Files (data.hrsa.gov)
+## Note thatimporting the data through writing code was ineffective so I did it thorugh point-and-click
+county_healthres <- county_hr_data_2022
+state_healthres <- state_hr_data_2022
+head(county_healthres)
 
+#Select Relevant Variables for County
+county_healthres <- county_hr_data_2022 %>%
+  select(f00002, f00010, f0978722, f12424, f00003, f00011, f1168420, f1256420, f0886820, f1525322, f1212920, f1529520, f1464521)
+write_csv(county_healthres, "county_healthresources.csv")
+view(county_healthres)
+
+#Select Relevant Varibales for State
+state_healthres <- state_hr_data_2022 %>%
+  select(SF00001, SF00002, SF01201_20, SF01208_20, SF03201_20, SF03208_20, SF72099_21, SF04078_20, SF04092_20)
+write_csv(state_healthres, "state_healthresources.csv")
+view(state_healthres)
 ```
 
+```{r Import County-Level Political Variables, include=TRUE}
+#Import Data from Tausanovitch and Warshaw - County Level
+counties_ideology_data <- counties_ideology_df %>%
+  filter(presidential_year == "2020") %>%
+  select(county_fips, county_name, state,presidential_year, demshare_pres, mrp_ideology, mrp_ideology_se, self_ideology, self_ideology_se)
+view(counties_ideology_data)
+write_csv(counties_ideology_data, "county_political_data.csv")
+#Import Data from Tausanovitch and Warshaw - State Level
+states_ideology_data <- aip_states_ideology_v2022a %>%
+  filter(presidential_year == "2020") %>%
+  select(fips, state, abb, presidential_year, demshare_pres, mrp_ideology, mrp_ideology_se, self_ideology, self_ideology_se)
+write_csv(states_ideology_data, "state_political_data.csv")
+view(states_ideology_data)
+```
+
+```{r Import Maternal Target Area Data, include=TRUE}
+#On Second Thought, this would be great to have but is too new a measure to be useful in this analysis. Future versions of this paper might use this. As it currently stands, the data isn't aggregated at the county level but rather in places that are already designated as HSPA sites so can't be ported directly into the merged dataset.
+mcta_score_county <- BCD_HPSA_FCT_DET_PC %>%
+  distinct(`Common State County FIPS Code`, .keep_all = TRUE)
+view(mcta_score_county)
+```
+
+```{r Putting it All Together with Merges, include=TRUE}
+#Start With the States Dataset
+## Begin by Merging the Health Insurance Data to the Original CLeaned Counties Data
+cleaned_states_merged <- state_demographics %>% 
+    rows_update(st_hinsvariables, by = "GEOID")
+view(cleaned_states_merged)
+```
