@@ -21,6 +21,7 @@ library(haven)
 library(janitor)
 library(ccesMRPprep)
 library(censusapi)
+library(stringr)
 #Set Census API Key
 ch_census_my_key <- census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE, overwrite = TRUE)
 ```
@@ -68,6 +69,8 @@ st_hinsvariables <- getCensus(
     vars = c("NAME", "GEOID", "PCTUI_PT", "NUI_PT"), 
     region = "state:*", 
     time = 2020)
+
+st_hinsvariables$GEOID <- str_remove("0+$", "") 
 
 view(hins_variables)
 view(st_hinsvariables)
@@ -179,6 +182,7 @@ counties_ideology_data <- counties_ideology_df %>%
   select(county_fips, county_name, state,presidential_year, demshare_pres, mrp_ideology, mrp_ideology_se, self_ideology, self_ideology_se)
 view(counties_ideology_data)
 #write_csv(counties_ideology_data, "county_political_data.csv")
+
 #Import Data from Tausanovitch and Warshaw - State Level
 states_ideology_data <- aip_states_ideology_v2022a %>%
   filter(presidential_year == "2020") %>%
@@ -197,7 +201,19 @@ view(mcta_score_county)
 ```{r Putting it All Together with Merges, include=TRUE}
 #Start With the States Dataset
 ## Begin by Merging the Health Insurance Data to the Original CLeaned Counties Data
-cleaned_states_merged <- state_demographics %>% 
-    rows_update(st_hinsvariables, by = "GEOID")
+cleaned_states_merged <- merge(state_demographics, st_hinsvariables, by.x = "GEOID", by.y = "state")
+
+cleaned_states_merged <- cleaned_states_merged %>%
+  select(-GEOID.y, -NAME.y)
+cleaned_states_merged <- cleaned_states_merged %>%
+  rename(NAME = "NAME.x")
+view(cleaned_states_merged)
+
+#Now Merge the state demographic data to the Health Resources Data 
+cleaned_states_merged <- merge(cleaned_states_merged, state_healthres, by.x = "GEOID", by.y = "SF00001")
+view(cleaned_states_merged)
+
+#Now, as a last step, merge the data to the Tausanovitch and Warshaw Data
+cleaned_states_merged <- merge(cleaned_states_merged, states_ideology_data, by.x = "GEOID", by.y = "fips")
 view(cleaned_states_merged)
 ```
