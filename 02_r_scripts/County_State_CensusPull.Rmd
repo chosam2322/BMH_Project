@@ -201,7 +201,7 @@ mcta_score_county <- BCD_HPSA_FCT_DET_PC %>%
 view(mcta_score_county)
 ```
 
-```{r Putting it All Together with Merges, include=TRUE}
+```{r Putting it All Together with Merges for the State Data, include=TRUE}
 #Start With the States Dataset
 ## Begin by Merging the Health Insurance Data to the Original CLeaned Counties Data
 cleaned_states_merged <- merge(state_demographics, st_hinsvariables, by.x = "GEOID", by.y = "state")
@@ -237,4 +237,8 @@ cleaned_states_merged <- cleaned_states_merged %>%
   relocate(abb, .after = NAME)
 
 write_csv(cleaned_states_merged, "State_Demographics_Merged.csv")
+```
+
+```{r Putting it All Together with Merges for the County Data, include=TRUE}
+
 ```
