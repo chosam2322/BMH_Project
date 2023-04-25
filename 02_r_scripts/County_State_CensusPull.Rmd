@@ -224,9 +224,10 @@ add_leading_zero <- function(x){
   return(x)
 }
 
-
 states_ideology_data$fips <- add_leading_zero(states_ideology_data$fips)
 view(states_ideology_data)
+
+#Now you can do the merge 
 cleaned_states_merged <- merge(cleaned_states_merged, states_ideology_data, by.x = "GEOID", by.y = "fips")
 view(cleaned_states_merged)
 cleaned_states_merged <- cleaned_states_merged %>%
