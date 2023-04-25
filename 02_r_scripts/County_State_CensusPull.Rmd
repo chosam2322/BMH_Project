@@ -22,6 +22,9 @@ library(janitor)
 library(ccesMRPprep)
 library(censusapi)
 library(stringr)
+```
+
+```{r Set Census API Key, include=TRUE}
 #Set Census API Key
 ch_census_my_key <- census_api_key("ce7de3bc25a542caf03e607ec3c2b6f33fee1bc3", install = TRUE, overwrite = TRUE)
 ```
@@ -44,7 +47,7 @@ view(sahie_vars)
 
 ```
 
-```{r Initial State-Level Call, include=TRUE}
+```{r Set Up Census API Calls, include=TRUE}
 #Create variable list of co-variates located in Census files for both states and counties
 my_variables <- c(educ_att_hs = "B15003_017",
                    educ_att_ba = "B15003_022",
@@ -56,7 +59,7 @@ my_variables <- c(educ_att_hs = "B15003_017",
                    medinchh = "B19013_001",
                    giniineq = "B19083_001")
 
-hins_variables <- getCensus(
+cty_hins_variables <- getCensus(
     key = ch_census_my_key,
     name = "timeseries/healthins/sahie",
     vars = c("NAME", "GEOID", "PCTUI_PT", "NUI_PT"), 
@@ -70,11 +73,12 @@ st_hinsvariables <- getCensus(
     region = "state:*", 
     time = 2020)
 
-st_hinsvariables$GEOID <- str_remove("0+$", "") 
 
-view(hins_variables)
+view(cty_hins_variables)
 view(st_hinsvariables)
+```
 
+```{r Initial State Level Call, include=TRUE}
 state_demographics <- get_acs(geography = "state",
                             year = 2021, 
                             survey = "acs5",
@@ -131,6 +135,9 @@ county_demographics <- county_demographics %>%
   
 view(county_demographics)
 
+```
+
+```{r Add Percentage Covariates for States, include=TRUE}
 #Do the same for the states 
 state_demographics <- state_demographics %>%
   mutate(pct_blk = 100 * ( blk_popE / total_pop)) %>%
@@ -142,17 +149,10 @@ state_demographics <- state_demographics %>%
   mutate(pct_pub_assist = 100 *(pub_assistE / total_pop))
 
 view(state_demographics)
-#Next, I'll write a function to cut down the county dataset to only three counties per state with the counties that have the highest percentage of Black people 
-cleaned_counties <- county_demographics %>% 
-  # Group by state
-  group_by(state) %>% 
-  # Sort by pct_blk_e in descending order
-  arrange(desc(pct_blk)) %>% 
-  # Select the top 3 rows for each state
-  slice(1:3)
+```
 
-view(cleaned_counties)
-#write_csv(cleaned_counties, "county_demographic_info.csv")
+```{r Create Base County List to Merge on, include=TRUE}
+
 ```
 
 ```{r Import Health Resources Data, include=TRUE}
@@ -165,36 +165,39 @@ head(county_healthres)
 #Select Relevant Variables for County
 county_healthres <- county_hr_data_2022 %>%
   select(f00002, f00010, f0978722, f12424, f00003, f00011, f1168420, f1256420, f0886820, f1525322, f1212920, f1529520, f1464521)
-#write_csv(county_healthres, "county_healthresources.csv")
+
 view(county_healthres)
 
 #Select Relevant Varibales for State
 state_healthres <- state_hr_data_2022 %>%
   select(SF00001, SF00002, SF01201_20, SF01208_20, SF03201_20, SF03208_20, SF72099_21, SF04078_20, SF04092_20)
-#write_csv(state_healthres, "state_healthresources.csv")
+
 view(state_healthres)
 ```
 
-```{r Import County-Level Political Variables, include=TRUE}
+```{r Import Political Variables, include=TRUE}
 #Import Data from Tausanovitch and Warshaw - County Level
 counties_ideology_data <- counties_ideology_df %>%
   filter(presidential_year == "2020") %>%
   select(county_fips, county_name, state,presidential_year, demshare_pres, mrp_ideology, mrp_ideology_se, self_ideology, self_ideology_se)
 view(counties_ideology_data)
-#write_csv(counties_ideology_data, "county_political_data.csv")
+
 
 #Import Data from Tausanovitch and Warshaw - State Level
 states_ideology_data <- aip_states_ideology_v2022a %>%
   filter(presidential_year == "2020") %>%
   select(fips, state, abb, presidential_year, demshare_pres, mrp_ideology, mrp_ideology_se, self_ideology, self_ideology_se)
-
-
-
-#write_csv(states_ideology_data, "state_political_data.csv")
-view(states_ideology_data)
 ```
 
-```{r Import Maternal Target Area Data, include=TRUE}
+```{r write CSVs, include=FALSE}
+write_csv(county_healthres, "county_healthresources.csv")
+write_csv(state_healthres, "state_healthresources.csv")
+write_csv(counties_ideology_data, "county_political_data.csv")
+write_csv(states_ideology_data, "state_political_data.csv")
+
+```
+
+```{r Import Maternal Target Area Data, include=FALSE}
 #On Second Thought, this would be great to have but is too new a measure to be useful in this analysis. Future versions of this paper might use this. As it currently stands, the data isn't aggregated at the county level but rather in places that are already designated as HSPA sites so can't be ported directly into the merged dataset.
 mcta_score_county <- BCD_HPSA_FCT_DET_PC %>%
   distinct(`Common State County FIPS Code`, .keep_all = TRUE)
@@ -207,9 +210,9 @@ view(mcta_score_county)
 cleaned_states_merged <- merge(state_demographics, st_hinsvariables, by.x = "GEOID", by.y = "state")
 
 cleaned_states_merged <- cleaned_states_merged %>%
-  select(-GEOID.y, -NAME.y)
-cleaned_states_merged <- cleaned_states_merged %>%
+  select(-GEOID.y, -NAME.y) %>%
   rename(NAME = "NAME.x")
+
 view(cleaned_states_merged)
 
 #Now Merge the state demographic data to the Health Resources Data 
@@ -231,14 +234,67 @@ view(states_ideology_data)
 cleaned_states_merged <- merge(cleaned_states_merged, states_ideology_data, by.x = "GEOID", by.y = "fips")
 view(cleaned_states_merged)
 cleaned_states_merged <- cleaned_states_merged %>%
-  select(-state)
-
-cleaned_states_merged <- cleaned_states_merged %>%
+  select(-state) %>%
   relocate(abb, .after = NAME)
+
 
 write_csv(cleaned_states_merged, "State_Demographics_Merged.csv")
 ```
 
 ```{r Putting it All Together with Merges for the County Data, include=TRUE}
+#Same Process as Before, Start with Merging the County Demographics to the SAHIE Variables
+clean_counties_merged <- merge(county_demographics, cty_hins_variables, by.x = "GEOID", by.y = "GEOID")
+view(clean_counties_merged)
 
+#Merge the Demographics to the Health Resources Data
+clean_counties_merged <- merge(clean_counties_merged, county_healthres, by.x = "GEOID", by.y = "f00002")
+
+#Merge the Demographics to the Tausanovitch-Warshaw Data, merge by name here
+clean_counties_merged <- merge(clean_counties_merged, counties_ideology_data, by.x = "county.x", by.y = "county_name")
+view(clean_counties_merged)
+
+#Now Get Rid of Extraneous Variables
+clean_counties_merged <- clean_counties_merged %>%
+  select(-county_fips, -state)
+
+clean_counties_merged <- clean_counties_merged %>%
+  select(-summary_moe, -county.y, -time)
+
+clean_counties_merged <- clean_counties_merged %>%
+  rename(county_name = county.x) %>%
+  rename(state_name = state.x) %>%
+  rename(state_fips = state.y)
+
+clean_counties_merged <- clean_counties_merged %>%
+  rename(num_obgyn = f1168420) %>%
+  rename(hspa_score = f0978722) %>%
+  rename(num_ob_hosp = f1256420) %>%
+  rename(tot_hosp = f0886820) %>%
+  rename(comm_health_cent = f1525322) %>%
+  rename(tot_doctors = f1212920) %>%
+  rename(num_midwives = f1464521) %>%
+  rename(medic_costs = f1529520)
+
+clean_counties_merged <- clean_counties_merged %>%
+  select(-f00003, -f00011) %>%
+  rename(county_name_alone = f00010) %>%
+  rename(state_abbrev = f12424)
+
+clean_counties_merged1 <- clean_counties_merged %>%
+  distinct(county_name, .keep_all = TRUE)
+#Finally, restrict the counties dataset to only those with the highest proportion of Black residents
+#Next, I'll write a function to cut down the county dataset to only three counties per state with the counties that have the highest percentage of Black people 
+cleaned_counties <- clean_counties_merged1 %>% 
+  # Group by state
+  group_by(state_name) %>% 
+  # Sort by pct_blk_e in descending order
+  arrange(desc(pct_blk)) %>% 
+  # Select the top 3 rows for each state
+  slice(1:3)
+
+view(cleaned_counties)
+
+cleaned_counties <- cleaned_counties %>%
+  relocate(GEOID)
+write_csv(cleaned_counties, "county_demographic_info_merged.csv")
 ```
