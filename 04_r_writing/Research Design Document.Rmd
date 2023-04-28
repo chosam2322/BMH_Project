@@ -1,0 +1,49 @@
+---
+title: "Bureaucratic Dispossession Research Design"
+author: "Christian Hosam"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document:
+    number_sections: false
+
+abstract: |
+  To what extent does the unique structure of American healthcare perpetuate racial disparities in maternal mortality and morbidity rates? Maternal mortality in the United States is often configured as a crisis given the disproportionate number of maternal deaths in comparison to other advanced industrial countries. Much of the recent research and advocacy on combatting these disparities have focused on moving from individual frameworks of blame to centering stories of either provider-level implicit bias and/or racism as well as social determinants of health. One avenue that has been relatively unexplored is the structure of the American healthcare system, particularly the uniquely high proportion of healthcare functionality that is devolved to states and localities. Here, I look at the three counties within the state of Maryland with the highest concentration of Black residents to show how the types of health-care initiatives located at the county level focus on nudging birthing people into better outcomes in spite of medical and sociological literature showing that these interventions are misapplied.
+  
+bibliography: "bmh_proj.bib"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Package Import, include=FALSE}
+library(devtools)
+library(tidyverse)
+library(usethis)
+library(rticles)
+library(bookdown)
+library(kableExtra)
+library(ggthemes)
+```
+
+# Finding Federalist Overreach
+
+Studying maternal health in the context of American politics requires a steady, thoughtful study of the particular contours of American federalism. Understanding the unique ways that the United States structures its healthcare access and delivery is largely a function of the ability of service providers to coordinate the care that different patients at different levels of need (both with respect to medical need and financial need) are able to receive.
+
+My core contention is that America's particular brand of federated authority of healthcare creates a patchwork level of healthcare effectiveness in which the ability to have a healthy pregnancy has much more to do with the particular segment of America that you live in than it would in other countries. However, an assertion about the particular importance of geographic territorialism would likely run into some intuitive objections relative to access and care within the experience of any individual pregnancy. First and perhaps most salient, the class of the individual birthing person would likely dictate not just their ability to access higher quality care (likely through the possession of private insurance) but also their ability to travel for care if their place of residence is located in a site with sub-optimal care.
+
+Second, the social determinants of health literature might also identify geography as a co-variate with respect to other factors that sit alongside other sociological outcomes that nonetheless lead to bio-medical risk factors. For example, living in a food desert is also a matter of public policy but access to healthy food in any situation leads to risk factors for child and parent alike so parsing out the impact of the actual lack of the resource and the importance of the factors that lead to its absence is difficult, particularly if the goal is to causally identify the impact of either.
+
+Finally, a recent turn in the public health literature speaks to the benefits of "regionalization of care" that speaks to the reduction of mortality rates for those who are able to get care across and between different medical providers [@handley2022].
+
+In order to track the particular impact of federalism on maternal care in the United States, I construct a dataset of both state and county maternal health information. For each state and each county, I track whether there are specific resources tailored for maternal health, the existence of a state plan around maternal health, and how success is measured in those programs, as well as if the state's maternal health plan (if applicable) has any mandates with respect to the types of care and resources that its counties should offer. My dependent variable in the analysis is a scale of alignment between the states and the counties. This leads to two hypotheses:
+
+$H_1$: The first is that misalignment is broad and not neatly captured by any of the demographic covariates in my model. The unique set-up of American federalism means that even to the extent that states can provide funding support to counties and frameworks for reduction of disparities, this type of care coordination is not systematic within the nation in ways that would, for example, suggest a clear site for Black women to go to receive a higher standard of care.
+
+$H_2$: The second is that this misalignment of care is actually predictive of some of the most harrowing conditions for pregnancy, particularly with respect to maternal care deserts. While this might initially seem at odds with $H_1$ what I am getting at is the fact that misalignment will be a more potently predictive measure than other demographic factors that are more closely tied within the extant literature on social determinants of health. My research design is as follows:
+
+## Research Design
+
+For each state, I hand-code information on the following variables:
+
+1.  
