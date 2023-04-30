@@ -1,1 +1,1 @@
-$$Misalignment_{i} = \alpha_i + \beta(HSPA)_{it} + \phi X_i + \rho Z_{i} + \varepsilon_i $$
+$$MMR_{i} = \beta_0 + \beta_1(Misalignment)_{i} + \gamma(SM)_i + \phi X_i + \rho Z_{i} + \varepsilon_i$$
